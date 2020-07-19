@@ -1,4 +1,4 @@
-
+library(dplyr)
 
 get_sppscount <- function(df, 
                           categories,
@@ -47,6 +47,8 @@ gather_sub <- function(rarelist){
 
 
 get_chi.square <- function(df){
+  
+  # df = sff_df
   
   do.call(
   "rbind",
@@ -112,17 +114,29 @@ twoplus_sample_comparison <- function(mydf,  at = "Categoria",
   varcol = ifelse(counts, "yes", "sff" )
   myvals = as.numeric(mydf[,varcol])
   
+  kt = kruskal.test(myvals, mydf[, at])
+  
   if(jitter){
     myvals = jitter(  myvals )
   }
   
-  FSA::dunnTest( 
-    myvals,
-    g = mydf[, at],
-    method = p.adjustment
-    ) -> mytest
-  
-  return(mytest$res)
+  if(kt$p.value >= 0.05){
+    
+    data.frame(
+      observation = "No difference",
+      p.value = kt$p.value,
+      Kruskal.Wallis_chi.squared = kt$statistic,
+      dfree = kt$parameter
+      )
+    
+  }else{
+    
+    FSA::dunnTest( 
+      myvals,
+      g = mydf[, at],
+      method = p.adjustment
+      )$res
+  }
 }
 
 my_theme <- function(base_size = 15, 
