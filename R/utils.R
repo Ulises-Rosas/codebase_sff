@@ -1,3 +1,51 @@
+
+
+get_sppscount <- function(df, 
+                          categories,
+                          unique_spps){
+  do.call(
+    "rbind",
+    lapply(
+      categories,
+      function(icat){
+        mydf = df[ df$Categoria == icat,]
+        sapply(
+          unique_spps,
+          function(x){
+            sum( mydf[,myspps] == x  )
+          }
+        )
+      }
+    )
+  ) -> myBCI
+  
+  return(myBCI)
+}
+
+gather_sub <- function(rarelist){
+  
+  do.call(
+    "rbind",
+    lapply(
+      rarelist,
+      function(df){
+        myattr = attr(df, "Subsample" )
+        place = attr(df, "place" )
+        
+        data.frame(
+          sample_size = as.numeric( myattr ),
+          species  = as.numeric( df ),
+          place = place
+          
+        )
+      }
+    )
+  ) -> raredf
+  
+  return(raredf)
+}
+
+
 get_chi.square <- function(df){
   
   do.call(
@@ -46,7 +94,7 @@ two_sample_comparison <- function( mydf,  groups = NULL,
   out = data.frame(
     comparison = paste(groups, collapse = " - "),
     p.val = mywil$p.value,
-    H.alternative = comparison
+    H1 = comparison
     )
   
   return(out)
@@ -95,6 +143,8 @@ my_theme <- function(base_size = 15,
 }
 
 get_ssf.df <- function(df, groupby){
+  
+  myexpre = rlang::parse_expr(groupby[1])
 
   df %>%
     dplyr::group_by(.dots = groupby) %>%
@@ -104,7 +154,16 @@ get_ssf.df <- function(df, groupby){
       n   = length(`Fraud/Mislabeling`),
       sff =  yes*100/ length(  `Fraud/Mislabeling`)
     ) %>%
-    dplyr::ungroup()-> sff_df
+    dplyr::ungroup() %>% {
+      
+      if(length(groupby) == 1){
+        dplyr::arrange(., -sff, -n)
+        
+      }else{
+        dplyr::arrange(., !!myexpre, -sff, -n)
+      }
+      
+    } -> sff_df
   
   return(sff_df)
 }
